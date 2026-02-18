@@ -37,8 +37,17 @@ src/
 │   ├── theme-toggle.tsx     # Animated sun/moon toggle
 │   ├── google-analytics.tsx # GA4 script loader
 │   ├── animated-gradient-text.tsx # Animated gradient text effect
+│   ├── faq-section.tsx      # Accordion FAQ UI (reads from siteConfig.faq)
+│   ├── related-tools.tsx    # Cross-tool internal linking grid
+│   ├── breadcrumb.tsx       # Breadcrumb navigation with ARIA
+│   ├── social-share.tsx     # Twitter/LinkedIn/Copy share buttons
+│   ├── github-star.tsx      # Star on GitHub CTA button
 │   ├── seo/
-│   │   └── structured-data.tsx    # JSON-LD WebApplication schema
+│   │   ├── structured-data.tsx    # JSON-LD WebApplication schema
+│   │   ├── faq-schema.tsx         # JSON-LD FAQPage schema
+│   │   ├── howto-schema.tsx       # JSON-LD HowTo schema
+│   │   ├── organization-schema.tsx # JSON-LD Organization schema
+│   │   └── breadcrumb-schema.tsx  # JSON-LD BreadcrumbList schema
 │   └── ui/                  # shadcn/ui components (DO NOT MODIFY)
 │       ├── button.tsx
 │       ├── card.tsx
@@ -51,7 +60,8 @@ src/
 │   └── site.ts             # ALL tool-specific config + pages registry
 ├── lib/
 │   ├── utils.ts            # cn() helper
-│   └── seo.ts              # generatePageMetadata() helper for per-page SEO
+│   ├── seo.ts              # generatePageMetadata() helper for per-page SEO
+│   └── analytics.ts        # GA4 trackEvent() + ToolEvents namespace
 ├── hooks/                   # Custom React hooks
 ├── types/                   # TypeScript type definitions
 └── env.mjs                 # Environment variable validation
@@ -84,6 +94,11 @@ This is the SINGLE SOURCE OF TRUTH for all tool-specific content. Update every `
 - `hero.*` - All hero section content
 - `featureCards` - 3 feature cards with emoji icons
 - `footer.*` - Footer content
+- `socialProfiles` - Array of social profile URLs (for Organization schema sameAs)
+- `relatedTools` - Cross-links to other Jagodana tools (remove/add as needed)
+- `howToSteps` - Step-by-step instructions (drives HowTo JSON-LD schema)
+- `howToTotalTime` - ISO 8601 duration (e.g., "PT2M" = 2 minutes)
+- `faq` - FAQ entries (drives both FAQ UI section and FAQPage JSON-LD schema)
 
 ### Step 3: Update `package.json`
 
@@ -212,14 +227,30 @@ Every tool MUST have:
 - [x] `layout.tsx` global metadata (title template, description, keywords, OG, Twitter)
 - [x] Per-page metadata via `generatePageMetadata()` on every page.tsx
 - [x] `robots.ts` with sitemap reference + disallow rules (/api/, /_next/, /private/)
+- [x] `robots.ts` environment-aware (blocks crawling in non-production)
 - [x] `sitemap.ts` auto-generated from `siteConfig.pages`
-- [x] JSON-LD structured data (WebApplication schema)
+- [x] Dynamic OG image via `opengraph-image.tsx` + `twitter-image.tsx` (@vercel/og)
+- [x] JSON-LD WebApplication schema (`seo/structured-data.tsx`)
+- [x] JSON-LD FAQPage schema (`seo/faq-schema.tsx`) + FAQ UI section
+- [x] JSON-LD HowTo schema (`seo/howto-schema.tsx`)
+- [x] JSON-LD Organization schema (`seo/organization-schema.tsx`)
+- [x] JSON-LD BreadcrumbList schema (`seo/breadcrumb-schema.tsx`)
+- [x] Cross-tool internal linking (`related-tools.tsx`)
+- [x] DNS prefetch + preconnect resource hints in layout.tsx
+- [x] Enhanced PWA manifest with multiple icon sizes + maskable
 - [x] `site.webmanifest` in public/
 - [x] `favicon.svg` in public/
-- [x] `og-image.png` (1200x630) in public/
 - [x] Canonical URL per page via `alternates.canonical`
 - [x] `viewport` export with themeColor
 - [x] Every new page registered in `siteConfig.pages`
+- [x] GA4 event tracking via `analytics.ts`
+
+### When to customize per tool:
+- Update `siteConfig.faq` with tool-specific Q&A
+- Update `siteConfig.howToSteps` with tool-specific steps
+- Update `siteConfig.relatedTools` to exclude self and add relevant tools
+- Add `<SocialShare />` and `<GitHubStar />` where appropriate in the UI
+- Add `<Breadcrumb />` + `<BreadcrumbSchema />` on sub-pages
 
 ## Security Headers (next.config.ts)
 
@@ -245,6 +276,36 @@ toast.error("Something went wrong");
 ### Adding shadcn/ui Components
 ```bash
 npx shadcn@latest add [component-name]
+```
+
+### Analytics Event Tracking
+```tsx
+import { ToolEvents } from "@/lib/analytics";
+ToolEvents.toolUsed("export");       // User performed a tool action
+ToolEvents.fileUploaded("svg", 1024); // File uploaded
+ToolEvents.resultExported("png");     // Result exported
+ToolEvents.resultCopied();            // Result copied to clipboard
+ToolEvents.shareClicked("twitter");   // Social share button clicked
+```
+
+### Social Sharing
+```tsx
+import { SocialShare } from "@/components/social-share";
+<SocialShare /> // Uses siteConfig defaults for title/text/url
+```
+
+### GitHub Star CTA
+```tsx
+import { GitHubStar } from "@/components/github-star";
+<GitHubStar /> // Links to siteConfig.links.github
+```
+
+### Breadcrumbs (for sub-pages)
+```tsx
+import { Breadcrumb } from "@/components/breadcrumb";
+import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
+<BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "About" }]} />
+<Breadcrumb items={[{ label: "Home", href: "/" }, { label: "About" }]} />
 ```
 
 ### API Routes (if needed)

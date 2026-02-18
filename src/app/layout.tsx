@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { StructuredData } from "@/components/seo/structured-data";
+import { FAQSchema } from "@/components/seo/faq-schema";
+import { HowToSchema } from "@/components/seo/howto-schema";
+import { OrganizationSchema } from "@/components/seo/organization-schema";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { env } from "@/env.mjs";
@@ -90,7 +93,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Resource hints for faster loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <StructuredData />
+        <FAQSchema />
+        <HowToSchema />
+        <OrganizationSchema />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
