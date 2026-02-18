@@ -73,6 +73,30 @@ export const siteConfig = {
       description: "{{FEATURE_CARD_DESC_3}}",
     },
   ],
+
+  // ====== PAGES (for sitemap + per-page SEO) ======
+  // Add every route here. Sitemap and generatePageMetadata() read from this.
+  pages: {
+    "/": {
+      title: "{{TOOL_TITLE}}",
+      description: "{{TOOL_DESCRIPTION}}",
+      changeFrequency: "weekly" as const,
+      priority: 1,
+    },
+    // Example: uncomment and add more pages as needed
+    // "/about": {
+    //   title: "About - {{TOOL_NAME}}",
+    //   description: "Learn more about {{TOOL_NAME}} and how it works.",
+    //   changeFrequency: "monthly" as const,
+    //   priority: 0.7,
+    // },
+    // "/blog": {
+    //   title: "Blog - {{TOOL_NAME}}",
+    //   description: "Tips, tutorials, and updates about {{TOOL_NAME}}.",
+    //   changeFrequency: "weekly" as const,
+    //   priority: 0.8,
+    // },
+  },
 } as const;
 
 export type SiteConfig = typeof siteConfig;

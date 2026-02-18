@@ -19,7 +19,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: siteConfig.title,
+  title: {
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
+  },
   description: siteConfig.description,
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL || siteConfig.url),
   keywords: [...siteConfig.keywords],

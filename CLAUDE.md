@@ -21,13 +21,16 @@ This is the base template for all Jagodana free tool websites. When creating a n
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root layout (metadata, fonts, providers) - driven by siteConfig
-│   ├── page.tsx            # Main page (hero + tool + features + footer)
+│   ├── layout.tsx          # Root layout (global metadata + title template, fonts, providers)
+│   ├── page.tsx            # Home page (SERVER component → exports metadata, renders HomePage)
 │   ├── globals.css         # Tailwind v4 theme tokens (OKLCH)
-│   ├── robots.ts           # SEO robots.txt
-│   ├── sitemap.ts          # SEO sitemap.xml
-│   └── api/                # API routes (if needed)
+│   ├── robots.ts           # SEO robots.txt (disallows /api/, /_next/, /private/)
+│   ├── sitemap.ts          # SEO sitemap.xml (auto-generated from siteConfig.pages)
+│   ├── api/                # API routes (if needed)
+│   └── (examples)/         # Example sub-page with per-page metadata (DELETE when starting)
+│       └── about/page.tsx
 ├── components/
+│   ├── home-page.tsx        # Home page CLIENT component (hero + tool + features)
 │   ├── header.tsx           # Sticky header with gradient logo + theme toggle
 │   ├── footer.tsx           # Footer with about + features + copyright
 │   ├── theme-provider.tsx   # next-themes wrapper
@@ -45,9 +48,10 @@ src/
 │       ├── sonner.tsx
 │       └── tabs.tsx
 ├── config/
-│   └── site.ts             # ALL tool-specific config lives here
+│   └── site.ts             # ALL tool-specific config + pages registry
 ├── lib/
-│   └── utils.ts            # cn() helper
+│   ├── utils.ts            # cn() helper
+│   └── seo.ts              # generatePageMetadata() helper for per-page SEO
 ├── hooks/                   # Custom React hooks
 ├── types/                   # TypeScript type definitions
 └── env.mjs                 # Environment variable validation
@@ -95,7 +99,16 @@ Install any additional packages needed for your tool's functionality.
 
 ### Step 6: Build the Tool UI
 
-Replace the placeholder in `src/app/page.tsx` (the `TODO` section) with your tool's main component. Create tool-specific components in `src/components/`.
+Replace the placeholder in `src/components/home-page.tsx` (the `TODO` section) with your tool's main component. The `page.tsx` is a server component that exports metadata and renders `<HomePage />`.
+
+### Step 6b: Add Sub-Pages (if needed)
+
+For each new page:
+1. Add the route to `siteConfig.pages` in `src/config/site.ts`
+2. Create `src/app/<route>/page.tsx` as a **server component**
+3. Export metadata: `export const metadata = generatePageMetadata("/<route>");`
+4. The sitemap auto-includes it (reads from `siteConfig.pages`)
+5. Delete the `src/app/(examples)/` folder (it's just a reference)
 
 ### Step 7: Add favicon.svg
 
@@ -140,18 +153,73 @@ Each tool has a unique gradient defined in `siteConfig.headerGradient`. Common c
 
 **Important**: When using dynamic Tailwind classes from siteConfig, ensure the classes are included in the safelist or use them somewhere statically so Tailwind doesn't purge them.
 
+## Per-Page SEO Pattern (CRITICAL)
+
+Every page MUST be a **server component** to export metadata. Use this pattern:
+
+```tsx
+// src/app/some-page/page.tsx (SERVER component - NO "use client")
+import { generatePageMetadata } from "@/lib/seo";
+import { SomePageClient } from "@/components/some-page-client";
+
+export const metadata = generatePageMetadata("/some-page");
+
+export default function SomePage() {
+  return <SomePageClient />;
+}
+```
+
+```tsx
+// src/components/some-page-client.tsx (CLIENT component)
+"use client";
+export function SomePageClient() {
+  // Interactive UI here
+}
+```
+
+**Why this split?** Next.js only allows metadata exports from server components. Client interactivity goes in a separate `"use client"` component.
+
+### Title Template
+
+`layout.tsx` uses a title template: `%s | {{TOOL_NAME}}`. Per-page metadata titles like "About" become "About | Tool Name" automatically. The homepage uses `default` to show the full title without the template.
+
+### generatePageMetadata() Helper
+
+Located at `src/lib/seo.ts`. It:
+- Reads page config from `siteConfig.pages`
+- Generates full Metadata object (title, description, OG, Twitter, canonical URL)
+- Supports overrides for custom title/description per page
+- Supports `noIndex: true` for private pages
+
+### siteConfig.pages Registry
+
+Every route must be registered in `siteConfig.pages`:
+
+```ts
+pages: {
+  "/": { title: "...", description: "...", changeFrequency: "weekly", priority: 1 },
+  "/about": { title: "...", description: "...", changeFrequency: "monthly", priority: 0.7 },
+}
+```
+
+This feeds both:
+- `sitemap.ts` - auto-generates sitemap.xml from all registered pages
+- `generatePageMetadata()` - reads title/description from here
+
 ## SEO Checklist
 
 Every tool MUST have:
-- [x] `layout.tsx` metadata (title, description, keywords, OG, Twitter)
-- [x] `robots.ts` with sitemap reference
-- [x] `sitemap.ts` with all routes
+- [x] `layout.tsx` global metadata (title template, description, keywords, OG, Twitter)
+- [x] Per-page metadata via `generatePageMetadata()` on every page.tsx
+- [x] `robots.ts` with sitemap reference + disallow rules (/api/, /_next/, /private/)
+- [x] `sitemap.ts` auto-generated from `siteConfig.pages`
 - [x] JSON-LD structured data (WebApplication schema)
 - [x] `site.webmanifest` in public/
 - [x] `favicon.svg` in public/
 - [x] `og-image.png` (1200x630) in public/
-- [x] Canonical URL via `alternates.canonical`
+- [x] Canonical URL per page via `alternates.canonical`
 - [x] `viewport` export with themeColor
+- [x] Every new page registered in `siteConfig.pages`
 
 ## Security Headers (next.config.ts)
 
