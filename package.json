@@ -1,5 +1,5 @@
 {
-  "name": "{{TOOL_SLUG}}",
+  "name": "cron-expression-parser",
   "version": "0.1.0",
   "private": true,
   "scripts": {
